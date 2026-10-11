@@ -1,5 +1,5 @@
 /* Katolik Mobile — service worker (offline + atualizações) */
-var CACHE = 'katolik-v3';
+var CACHE = 'katolik-66f72fb5';
 
 var PRECACHE = [
   './',
@@ -9,7 +9,7 @@ var PRECACHE = [
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
-  './AppEntry-20002b68639208972116f0cd7f3d1db8.js'
+  './AppEntry-66f72fb5effbeccf6c2ee2a7dd84cb76.js'
 ];
 
 self.addEventListener('install', function (event) {

@@ -9,7 +9,7 @@ var PRECACHE = [
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
-  './AppEntry-54d7b04829e8ba4ec9221c0f870ac897.js'
+  './AppEntry-9f9475575e42e55e02e8802fa2e39e40.js'
 ];
 
 self.addEventListener('install', function (event) {

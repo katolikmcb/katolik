@@ -1,5 +1,5 @@
 /* Katolik Mobile — service worker (offline + atualizações) */
-var CACHE = 'katolik-v1';
+var CACHE = 'katolik-v2';
 
 var PRECACHE = [
   './',
@@ -46,7 +46,7 @@ self.addEventListener('fetch', function (event) {
       fetch(req)
         .then(function (res) {
           var copy = res.clone();
-          caches.open(CACHE).then(function (c) { c.put(req, copy); });
+          caches.open(CACHE).then(function (c) { if (res.status === 200) c.put(req, copy); });
           return res;
         })
         .catch(function () {
@@ -64,7 +64,7 @@ self.addEventListener('fetch', function (event) {
       if (hit) return hit;
       return fetch(req).then(function (res) {
         var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(req, copy); });
+        caches.open(CACHE).then(function (c) { if (res.status === 200) c.put(req, copy); });
         return res;
       });
     })

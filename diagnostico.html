@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Diagnóstico — Katolik Mobile</title>
+<style>
+  body { background:#0B0B0D; color:#F4F2EC; font-family: system-ui, -apple-system, sans-serif; margin:0; padding:24px; }
+  h1 { color:#D4AF37; margin-top:0; }
+  .card { background:#141417; border:1px solid #2A2A2F; border-radius:14px; padding:16px; margin:14px 0; }
+  .ok { color:#5FA87B; font-weight:700; }
+  .bad { color:#C05B4D; font-weight:700; }
+  .muted { color:#A6A29B; font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td { padding:6px 4px; border-bottom:1px solid #2A2A2F; word-break:break-all; }
+  #banner { padding:16px; border-radius:14px; font-weight:700; display:none; margin-top:16px; }
+  .glyph { font-family:'KatIon'; font-size:44px; color:#D4AF37; margin:0 14px; }
+  .row { display:flex; align-items:center; }
+</style>
+</head>
+<body>
+<h1>✝ Diagnóstico do Katolik</h1>
+<p class="muted">Esta página verifica se todos os arquivos do app estão chegando corretamente no seu dispositivo.</p>
+
+<div class="card"><b>1. Arquivos do site</b><table id="tab"><tr><td>Analisando…</td></tr></table></div>
+
+<div class="card"><b>2. Teste dos ícones</b>
+  <p class="muted">Se os ícones abaixo aparecerem <b>dourados e nítidos</b> (casa, livro, coração), a fonte de ícones está funcionando. Se aparecerem um <b>X ou caixinha</b>, há problema na fonte.</p>
+  <div class="row"><span class="glyph">&#xf382;</span><span class="glyph">&#xf1a5;</span><span class="glyph">&#xf36a;</span></div>
+  <div id="fontst"></div>
+</div>
+
+<div id="banner"></div>
+<p class="muted" id="ua"></p>
+
+<script>
+(function () {
+  var ION_FALLBACK = 'Ionicons.b4eb097d35f44ed943676fd56f6bdc51.ttf';
+  var tab = document.getElementById('tab');
+  var bad = 0, rows = [], bundle = null, ION = ION_FALLBACK;
+
+  function addRow(name, status) {
+    var okc = status === 200;
+    if (!okc) bad++;
+    rows.push('<tr><td>' + name + '</td><td class="' + (okc ? 'ok' : 'bad') + '">' + status + '</td></tr>');
+  }
+
+  async function run() {
+    // descobre o bundle atual pelo index.html
+    try {
+      var h = await (await fetch('./index.html', { cache: 'no-store' })).text();
+      var m = h.match(/AppEntry-[^"]+\.js/);
+      bundle = m ? m[0] : null;
+    } catch (e) { bundle = null; }
+
+    // bundle: status + descoberta da fonte real
+    if (bundle) {
+      try {
+        var rb = await fetch('./' + bundle, { cache: 'no-store' });
+        addRow(bundle, rb.status);
+        if (rb.status === 200) {
+          var txt = await rb.text();
+          var mf = txt.match(/Ionicons\.[0-9a-f]+\.ttf/);
+          if (mf) ION = mf[0];
+        }
+      } catch (e) { addRow(bundle, 'ERRO DE REDE'); }
+    } else {
+      addRow('bundle JS (no index.html)', 'AUSENTE');
+    }
+
+    var arqs = [ION, 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+    for (var i = 0; i < arqs.length; i++) {
+      try {
+        var r = await fetch('./' + arqs[i], { cache: 'no-store' });
+        addRow(arqs[i], r.status);
+      } catch (e) { addRow(arqs[i], 'ERRO DE REDE'); }
+    }
+    tab.innerHTML = rows.join('');
+
+    // fonte de ícones
+    var st = document.createElement('style');
+    st.textContent = "@font-face{font-family:'KatIon';src:url('./" + ION + "') format('truetype');font-display:block;}";
+    document.head.appendChild(st);
+    var fontOk = false;
+    try {
+      await document.fonts.load("44px 'KatIon'", '\uf382');
+      fontOk = document.fonts.check("44px 'KatIon'");
+    } catch (e) {}
+    document.getElementById('fontst').innerHTML = fontOk
+      ? '<p class="ok">Fonte de ícones: CARREGADA ✓</p>'
+      : '<p class="bad">Fonte de ícones: NÃO CARREGOU ✗</p>';
+
+    var b = document.getElementById('banner');
+    b.style.display = 'block';
+    if (bad === 0 && fontOk) {
+      b.style.background = '#12291D';
+      b.style.border = '1px solid #5FA87B';
+      b.style.color = '#8FD9AE';
+      b.innerHTML = '✅ TUDO CERTO NESTE DISPOSITIVO.<br><br>Se você ainda vê os X no app, é cache antigo: no computador pressione <b>Ctrl+Shift+R</b>; no celular, apague os dados do site (Chrome → ⋮ → Configurações → Privacidade → Dados do site) e abra de novo.';
+    } else {
+      b.style.background = '#2E1613';
+      b.style.border = '1px solid #C05B4D';
+      b.style.color = '#E8A093';
+      b.innerHTML = '✗ PROBLEMA ENCONTRADO: ' + (bad ? bad + ' arquivo(s) não estão chegando. ' : '') + (fontOk ? '' : 'A fonte de ícones não carregou.') + '<br><br>Solução: suba TODOS os arquivos da pasta <b>katolik-web</b> de novo no GitHub (Add file → Upload files → Commit changes).';
+    }
+    document.getElementById('ua').textContent = navigator.userAgent;
+  }
+  run();
+})();
+</script>
+</body>
+</html>

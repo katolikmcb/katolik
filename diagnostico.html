@@ -16,13 +16,17 @@
   #banner { padding:16px; border-radius:14px; font-weight:700; display:none; margin-top:16px; }
   .glyph { font-family:'KatIon'; font-size:44px; color:#D4AF37; margin:0 14px; }
   .row { display:flex; align-items:center; }
+  button { background:#2A2A2F; color:#F4F2EC; border:1px solid #D4AF37; border-radius:10px;
+           padding:10px 16px; font-size:15px; font-weight:700; margin-top:12px; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  #fixst { margin-top:10px; font-size:14px; }
 </style>
 </head>
 <body>
 <h1>✝ Diagnóstico do Katolik</h1>
 <p class="muted">Esta página verifica se todos os arquivos do app estão chegando corretamente no seu dispositivo.</p>
 
-<div class="card"><b>1. Arquivos do site</b><table id="tab"><tr><td>Analisando…</td></tr></table></div>
+<div class="card"><b>1. Arquivos do site</b><table id="tab"><tbody><tr><td>Analisando…</td></tr></tbody></table></div>
 
 <div class="card"><b>2. Teste dos ícones</b>
   <p class="muted">Se os ícones abaixo aparecerem <b>dourados e nítidos</b> (casa, livro, coração), a fonte de ícones está funcionando. Se aparecerem um <b>X ou caixinha</b>, há problema na fonte.</p>
@@ -31,21 +35,54 @@
 </div>
 
 <div id="banner"></div>
+
+<div class="card"><b>3. Correção automática</b>
+  <p class="muted">Se o app está desatualizado ou preso num cache antigo, aperte o botão: ele apaga os caches do site, registra o service worker de novo e recarrega.</p>
+  <button id="fixbtn" type="button">🧹 Limpar cache e recarregar</button>
+  <div id="fixst"></div>
+</div>
+
 <p class="muted" id="ua"></p>
 
 <script>
 (function () {
-  var ION_FALLBACK = 'Ionicons.b4eb097d35f44ed943676fd56f6bdc51.ttf';
-  var tab = document.getElementById('tab');
-  var bad = 0, rows = [], bundle = null, ION = ION_FALLBACK;
+  var ION = 'Ionicons.67e546cd.ttf';
+  var tab = document.querySelector('#tab tbody');
+  var bad = 0, bundle = null;
 
+  // Monta as linhas com DOM de verdade (createElement + textContent) em vez
+  // de innerHTML: os nomes vêm do index.html/bundle e não precisam ser HTML.
   function addRow(name, status) {
     var okc = status === 200;
     if (!okc) bad++;
-    rows.push('<tr><td>' + name + '</td><td class="' + (okc ? 'ok' : 'bad') + '">' + status + '</td></tr>');
+    var tr = document.createElement('tr');
+
+    var tdName = document.createElement('td');
+    tdName.textContent = String(name);
+    tr.appendChild(tdName);
+
+    var tdStatus = document.createElement('td');
+    tdStatus.className = okc ? 'ok' : 'bad';
+    tdStatus.textContent = String(status);
+    tr.appendChild(tdStatus);
+
+    tab.appendChild(tr);
+  }
+
+  function setMessage(el, prefix, message) {
+    el.textContent = '';
+    var head = document.createElement('b');
+    head.textContent = prefix;
+    el.appendChild(head);
+    el.appendChild(document.createElement('br'));
+    el.appendChild(document.createElement('br'));
+    el.appendChild(document.createTextNode(message));
   }
 
   async function run() {
+    // limpa a linha provisória "Analisando…" antes das reais
+    tab.textContent = '';
+
     // descobre o bundle atual pelo index.html
     try {
       var h = await (await fetch('./index.html', { cache: 'no-store' })).text();
@@ -53,16 +90,11 @@
       bundle = m ? m[0] : null;
     } catch (e) { bundle = null; }
 
-    // bundle: status + descoberta da fonte real
+    // bundle: só o status (o nome já é conhecido; sem varrer 1,5 MB de texto)
     if (bundle) {
       try {
-        var rb = await fetch('./' + bundle, { cache: 'no-store' });
+        var rb = await fetch('./' + bundle, { method: 'HEAD', cache: 'no-store' });
         addRow(bundle, rb.status);
-        if (rb.status === 200) {
-          var txt = await rb.text();
-          var mf = txt.match(/Ionicons\.[0-9a-f]+\.ttf/);
-          if (mf) ION = mf[0];
-        }
       } catch (e) { addRow(bundle, 'ERRO DE REDE'); }
     } else {
       addRow('bundle JS (no index.html)', 'AUSENTE');
@@ -75,7 +107,6 @@
         addRow(arqs[i], r.status);
       } catch (e) { addRow(arqs[i], 'ERRO DE REDE'); }
     }
-    tab.innerHTML = rows.join('');
 
     // fonte de ícones
     var st = document.createElement('style');
@@ -86,9 +117,13 @@
       await document.fonts.load("44px 'KatIon'", '\uf382');
       fontOk = document.fonts.check("44px 'KatIon'");
     } catch (e) {}
-    document.getElementById('fontst').innerHTML = fontOk
-      ? '<p class="ok">Fonte de ícones: CARREGADA ✓</p>'
-      : '<p class="bad">Fonte de ícones: NÃO CARREGOU ✗</p>';
+    document.getElementById('fontst').textContent = '';
+    var p = document.createElement('p');
+    p.className = fontOk ? 'ok' : 'bad';
+    p.textContent = fontOk
+      ? 'Fonte de ícones: CARREGADA ✓'
+      : 'Fonte de ícones: NÃO CARREGOU ✗';
+    document.getElementById('fontst').appendChild(p);
 
     var b = document.getElementById('banner');
     b.style.display = 'block';
@@ -96,15 +131,62 @@
       b.style.background = '#12291D';
       b.style.border = '1px solid #5FA87B';
       b.style.color = '#8FD9AE';
-      b.innerHTML = '✅ TUDO CERTO NESTE DISPOSITIVO.<br><br>Se você ainda vê os X no app, é cache antigo: no computador pressione <b>Ctrl+Shift+R</b>; no celular, apague os dados do site (Chrome → ⋮ → Configurações → Privacidade → Dados do site) e abra de novo.';
+      setMessage(
+        b,
+        '✅ TUDO CERTO NESTE DISPOSITIVO.',
+        'Se você ainda vê os X no app, é cache antigo: use o botão ' +
+          '“Limpar cache e recarregar” abaixo. Se ele não resolver, ' +
+          'apague os dados do site (Chrome → ⋮ → Configurações → ' +
+          'Privacidade → Dados do site) e abra de novo.'
+      );
     } else {
       b.style.background = '#2E1613';
       b.style.border = '1px solid #C05B4D';
       b.style.color = '#E8A093';
-      b.innerHTML = '✗ PROBLEMA ENCONTRADO: ' + (bad ? bad + ' arquivo(s) não estão chegando. ' : '') + (fontOk ? '' : 'A fonte de ícones não carregou.') + '<br><br>Solução: suba TODOS os arquivos da pasta <b>katolik-web</b> de novo no GitHub (Add file → Upload files → Commit changes).';
+      setMessage(
+        b,
+        '✗ PROBLEMA ENCONTRADO:',
+        (bad ? bad + ' arquivo(s) não estão chegando. ' : '') +
+          (fontOk ? '' : 'A fonte de ícones não carregou. ') +
+          'Solução: primeiro use o botão “Limpar cache e recarregar” ' +
+          'abaixo. Se persistir, o problema é no servidor: suba TODOS os ' +
+          'arquivos da pasta katolik-web de novo no GitHub (Add file → ' +
+          'Upload files → Commit changes).'
+      );
     }
     document.getElementById('ua').textContent = navigator.userAgent;
   }
+
+  // Correção automática: apaga todos os caches do site, desregistra o
+  // service worker e recarrega com cache-bust. O próprio index.html
+  // volta a registrar o SW atualizado no load.
+  document.getElementById('fixbtn').addEventListener('click', async function () {
+    var btn = this;
+    var st = document.getElementById('fixst');
+    btn.disabled = true;
+    st.className = 'muted';
+    st.textContent = 'Limpando…';
+    try {
+      var n = 0;
+      if (window.caches && caches.keys) {
+        var keys = await caches.keys();
+        await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        n = keys.length;
+      }
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        var regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(function (r) { return r.unregister(); }));
+      }
+      st.className = 'ok';
+      st.textContent = 'Pronto: ' + n + ' cache(s) removido(s). Recarregando…';
+      location.replace(location.pathname + '?v=' + Date.now());
+    } catch (e) {
+      st.className = 'bad';
+      st.textContent = 'Não deu para limpar automaticamente: ' + e;
+      btn.disabled = false;
+    }
+  });
+
   run();
 })();
 </script>

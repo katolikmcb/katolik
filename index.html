@@ -2,7 +2,6 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Katolik Mobile</title>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
@@ -15,6 +14,8 @@
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {
         overflow: hidden;
+        /* evita flash branco antes do app escuro montar */
+        background: #0b0b0d;
       }
       /* These styles make the root element full-height */
       #root {
@@ -23,31 +24,53 @@
         flex: 1;
       }
     </style>
-  <link rel="icon" href="./favicon.ico"/>
-    <meta name="description" content="Orações, Santo Terço interativo, Liturgia das Horas e santo do dia. 100% offline, sem cadastro." />
+    <link rel="icon" href="./favicon.ico" />
+    <meta name="description" content="Orações, Santo Terço interativo, Liturgia das Horas, liturgia do dia e santo do dia. 100% offline, sem cadastro." />
     <meta name="theme-color" content="#0B0B0D" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Katolik" />
-</head>
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:url" content="https://katolikmcb.github.io/katolik/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Katolik" />
+    <meta property="og:title" content="Katolik — Orações, Terço e Liturgia" />
+    <meta property="og:description" content="Orações, Santo Terço interativo, Liturgia das Horas, liturgia do dia e santo do dia. 100% offline, sem cadastro." />
+    <meta property="og:image" content="https://katolikmcb.github.io/katolik/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Katolik — cruz dourada sobre fundo preto" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Katolik — Orações, Terço e Liturgia" />
+    <meta name="twitter:description" content="Orações, Santo Terço interativo, Liturgia das Horas, liturgia do dia e santo do dia. 100% offline, sem cadastro." />
+    <meta name="twitter:image" content="https://katolikmcb.github.io/katolik/icon-512.png" />
+    <!-- A fonte de ícones fica disponível o quanto antes (menos "X" no lugar dos ícones) -->
+    <link rel="preload" as="font" type="font/ttf" crossorigin href="./Ionicons.67e546cd.ttf" />
+    <!-- no <head> com defer: o download dos 1,5 MB começa junto com o HTML -->
+    <script src="./AppEntry-65b4699a5be43d86cf12f9b9937da581.js" defer></script>
+  </head>
 
   <body>
     <!-- Use static rendering with Expo Router to support running without JavaScript. -->
     <noscript>
-      You need to enable JavaScript to run this app.
+      Este site precisa de JavaScript ativado. Ative nas configurações do navegador e recarregue a página.
     </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
-  <script src="./AppEntry-66f72fb5effbeccf6c2ee2a7dd84cb76.js" defer></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js').catch(function () {});
-      });
-    }
-  </script>
-</body>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('./sw.js', { updateViaCache: 'none' })
+            .catch(function (err) {
+              console.warn('Katolik: service worker não registrou.', err);
+            });
+        });
+      }
+    </script>
+  </body>
 </html>

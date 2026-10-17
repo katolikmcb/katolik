@@ -1,5 +1,5 @@
 /* Katolik Mobile — service worker (offline + atualizações) */
-var CACHE = 'katolik-share-logo-raiz-7d3ac6e2';
+var CACHE = 'katolik-share-icone-logo-8b4e02f7';
 
 /* Teto de espera para navegação: em rede ruim, serve o cache em vez de
    deixar o usuário esperando o fetch desistir (~30s). */

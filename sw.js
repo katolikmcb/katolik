@@ -1,5 +1,5 @@
 /* Katolik Mobile — service worker (offline + atualizações) */
-var CACHE = 'katolik-share-1a7f39c2';
+var CACHE = 'katolik-share-logo-dourado-5f81e3aa';
 
 /* Teto de espera para navegação: em rede ruim, serve o cache em vez de
    deixar o usuário esperando o fetch desistir (~30s). */
@@ -27,6 +27,7 @@ var PRECACHE = [
   './close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png',
   './close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png',
   './search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png',
+  './logo/logopng-dourado.png',
   './Ionicons.67e546cd.ttf',
   './AppEntry-65b4699a5be43d86cf12f9b9937da581.js'
 ];
